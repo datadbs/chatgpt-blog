@@ -94,17 +94,7 @@ def make_prompt(prompt, topic='<<TOPIC>>', category='<<CATEGORY>>'):
         prompt = prompt.replace('<<CATEGORY>>', category)
     return prompt
 
-def make_header(topic, category, tags):
-    # 블로그 헤더
-    page_head = f'''---
-layout: single
-title:  "{topic}"
-categories: {category}
-tag: [{tags}]
-toc: false
-author_profile: false
----'''
-    return page_head
+
 
 prompt_example = f'''Write blog posts in markdown format.
 Write the theme of your blog as what is "<<TOPIC>>" and its category is "<<CATEGORY>>".
@@ -157,17 +147,27 @@ def generate_blog(apikey, topic, category, prompt):
     prompt_output = make_prompt(prompt=prompt, topic=topic, category=category)
     # 글 생성
     response = generate_text(prompt_output)
+
     body = response.choices[0].text
     # 태그 생성
     global tags
     tags = extract_tags(body)
 
-    # header 생성
-    header = make_header(topic=topic, category=category, tags=tags)
+    intro = f"<h3 data-ke-size='size16'>Hello, this is Rich Robo. Today, we will learn about {topic} among {category}. Subscriptions and likes help Rich Robo!</h3>"
     # 첫 줄은 타이틀(제목)과 겹치기 때문에 제거하도록 합니다.
     body = '\n'.join(response['choices'][0]['text'].strip().split('\n')[1:])
-    
-    postWrite(topic, body)
+    bodyarr = body.split('\n')
+    for i in range(len(bodyarr)):
+        if bodyarr[i].split(' ')[0] == '##':
+            bodyarr[i] = ' '.join(bodyarr[i].split(' ')[1:])
+            bodyarr[i] = f'<h2 data-ke-size="size16">{bodyarr[i]}</h2>'
+        # elif bodyarr[i].split(' ')[0] == '*' or '-':
+        #     bodyarr[i] = ' '.join(bodyarr[i].split(' ')[1:])
+        #     bodyarr[i] = f'<li data-ke-size="size16">{bodyarr[i]}</li>'
+        else:
+            bodyarr[i] = f'<p data-ke-size="size16">{bodyarr[i]}</p>'
+    body = '\n'.join(bodyarr)
+    postWrite(topic, intro+body)
 
     # yesterday = datetime.now() - timedelta(days=1)
     # timestring = yesterday.strftime('%Y-%m-%d')
@@ -235,25 +235,24 @@ with tab_multiple:
         if button2:
             generate_progress = st.progress(0)            
             st.write(f"[알림] 총{total} 개의 블로그를 생성합니다!")
-            blog_files = []
+
             for i, row in df.iterrows():
-                filename = generate_blog(apikey=apikey, topic=row['topic'], category=row['category'], prompt=prompt2)
-                blog_files.append(filename)
+                generate_blog(apikey=apikey, topic=row['topic'], category=row['category'], prompt=prompt2)
                 st.write(f"[완료] {row['topic']}")
                 generate_progress.progress((i + 1) / total)
+            check_btn = prompt_container2.button('완료')
+            # yesterday = datetime.now() - timedelta(days=1)
+            # timestring = yesterday.strftime('%Y-%m-%d')
+            # zip_filename = f'{timestring}-blog-files.zip'
+            # with zipfile.ZipFile(zip_filename, 'w') as myzip:
+            #     for f in blog_files:
+            #         myzip.write(f)
+            #     myzip.close()
 
-            yesterday = datetime.now() - timedelta(days=1)
-            timestring = yesterday.strftime('%Y-%m-%d')
-            zip_filename = f'{timestring}-blog-files.zip'
-            with zipfile.ZipFile(zip_filename, 'w') as myzip:
-                for f in blog_files:
-                    myzip.write(f)
-                myzip.close()
-
-            with open(zip_filename, "rb") as fzip:
-                download_btn2 = st.download_button(label="파일 다운로드",
-                                                   data=fzip,
-                                                   file_name=zip_filename,
-                                                   mime="application/zip"
-    )
+            # with open(zip_filename, "rb") as fzip:
+            #     download_btn2 = st.download_button(label="파일 다운로드",
+            #                                        data=fzip,
+            #                                        file_name=zip_filename,
+            #                                        mime="application/zip"
+    # )
 
