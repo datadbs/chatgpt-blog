@@ -169,12 +169,7 @@ def generate_blog(apikey, topic, category, prompt):
     body = '\n'.join(bodyarr)
     postWrite(topic, intro+body)
 
-    # yesterday = datetime.now() - timedelta(days=1)
-    # timestring = yesterday.strftime('%Y-%m-%d')
-    # filename = f"{timestring}-{'-'.join(topic.lower().split())}.md"
-    # with open(filename, 'w') as f:
-    #     f.write(output)
-    #     f.close()
+
     
 
 with tab_single:
@@ -241,18 +236,4 @@ with tab_multiple:
                 st.write(f"[완료] {row['topic']}")
                 generate_progress.progress((i + 1) / total)
             check_btn = prompt_container2.button('완료')
-            # yesterday = datetime.now() - timedelta(days=1)
-            # timestring = yesterday.strftime('%Y-%m-%d')
-            # zip_filename = f'{timestring}-blog-files.zip'
-            # with zipfile.ZipFile(zip_filename, 'w') as myzip:
-            #     for f in blog_files:
-            #         myzip.write(f)
-            #     myzip.close()
-
-            # with open(zip_filename, "rb") as fzip:
-            #     download_btn2 = st.download_button(label="파일 다운로드",
-            #                                        data=fzip,
-            #                                        file_name=zip_filename,
-            #                                        mime="application/zip"
-    # )
-
+            
