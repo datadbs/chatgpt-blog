@@ -15,12 +15,12 @@ if response.status_code == 200:
     titles = ul.select('li')
     pgrr=[]
     for title in titles:
-        pgr=[]
-        pgr.append(title.get_text().replace('\r\n','').rstrip())
-        pgrr.append(pgr)
+        pgrr.append(title.get_text().replace('\r\n','').rstrip())
 else : 
     print(response.status_code)
 
 print(pgrr)
-df = pd.DataFrame.from_records(pgrr)
-df.to_excel('term.xlsx')
+df = pd.DataFrame(pgrr, columns=['keyword'])
+df['topic'] = '<<KEYWORD>>'
+df['category'] = 'Stock'
+df.to_csv('term.csv', index=False, encoding='utf-8-sig')
