@@ -94,7 +94,17 @@ def make_prompt(prompt, topic='<<TOPIC>>', category='<<CATEGORY>>'):
         prompt = prompt.replace('<<CATEGORY>>', category)
     return prompt
 
-
+def make_header(topic, category, tags):
+    # 블로그 헤더
+    page_head = f'''---
+layout: single
+title:  "{topic}"
+categories: {category}
+tag: [{tags}]
+toc: false
+author_profile: false
+---'''
+    return page_head
 
 prompt_example = f'''Write blog posts in markdown format.
 Write the theme of your blog as what is "<<TOPIC>>" and its category is "<<CATEGORY>>".
@@ -161,13 +171,21 @@ def generate_blog(apikey, topic, category, prompt):
         if bodyarr[i].split(' ')[0] == '##':
             bodyarr[i] = ' '.join(bodyarr[i].split(' ')[1:])
             bodyarr[i] = f'<h2 data-ke-size="size16">{bodyarr[i]}</h2>'
-        # elif bodyarr[i].split(' ')[0] == '*' or '-':
-        #     bodyarr[i] = ' '.join(bodyarr[i].split(' ')[1:])
-        #     bodyarr[i] = f'<li data-ke-size="size16">{bodyarr[i]}</li>'
         else:
             bodyarr[i] = f'<p data-ke-size="size16">{bodyarr[i]}</p>'
-    body = '\n'.join(bodyarr)
-    postWrite(topic, intro+body)
+    tbody = '\n'.join(bodyarr)
+    postWrite(topic, intro+tbody)
+
+    ### file ###
+    header = make_header(topic=topic, category=category, tags=tags)
+    output = header+body
+    yesterday = datetime.now() - timedelta(days=1)
+    timestring = yesterday.strftime('%Y-%m-%d')
+    filename = f"{timestring}-{'-'.join(topic.lower().split())}.md"
+    with open(filename, 'w') as f:
+        f.write(output)
+        f.close()
+    return filename
 
 
     
@@ -199,8 +217,11 @@ with tab_single:
         button = prompt_container.button('생성하기')
 
         if button:
-            generate_blog(apikey=apikey, topic=topic, category=category, prompt=prompt)
-            check_btn = prompt_container.button('완료')
+            filename = generate_blog(apikey=apikey, topic=topic, category=category, prompt=prompt)
+            download_btn = prompt_container.download_button(label='파일 다운로드', 
+                                                data=get_file(filename=filename),
+                                                file_name=filename,
+                                                mime='text/markdown')
 
 with tab_multiple:
     file_upload = st.file_uploader("파일 선택(csv)", type=['csv'])
@@ -230,10 +251,24 @@ with tab_multiple:
         if button2:
             generate_progress = st.progress(0)            
             st.write(f"[알림] 총{total} 개의 블로그를 생성합니다!")
-
+            blog_files = []
             for i, row in df.iterrows():
-                generate_blog(apikey=apikey, topic=row['topic'], category=row['category'], prompt=prompt2)
+                filename = generate_blog(apikey=apikey, topic=row['topic'], category=row['category'], prompt=prompt2)
+                blog_files.append(filename)
                 st.write(f"[완료] {row['topic']}")
                 generate_progress.progress((i + 1) / total)
-            check_btn = prompt_container2.button('완료')
+            yesterday = datetime.now() - timedelta(days=1)
+            timestring = yesterday.strftime('%Y-%m-%d')
+            zip_filename = f'{timestring}-blog-files.zip'
+            with zipfile.ZipFile(zip_filename, 'w') as myzip:
+                for f in blog_files:
+                    myzip.write(f)
+                myzip.close()
+
+            with open(zip_filename, "rb") as fzip:
+                download_btn2 = st.download_button(label="파일 다운로드",
+                                                   data=fzip,
+                                                   file_name=zip_filename,
+                                                   mime="application/zip"
+    )
             
